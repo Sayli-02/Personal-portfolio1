@@ -9,8 +9,8 @@
 
 export const assets = {
   plate: "/sayli-hero.png",
-  /** Laptop-forward still for case mode; use hero until a dedicated case still exists. */
-  casePlate: "/sayli-hero.png",
+  /** Front-on laptop still extracted from the dive clip end frame. */
+  casePlate: "/sayli-case.png",
   /** Lanyard chrome only (empty sleeve) — not a character photo. */
   badge:
     "https://images.higgs.ai/?default=1&output=webp&url=" +

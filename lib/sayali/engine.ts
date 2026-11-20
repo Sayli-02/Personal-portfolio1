@@ -589,7 +589,8 @@ export function createEngine(
     frame.classList.add("glide");
     place("case");
 
-    plate.style.transformOrigin = "48% 62%";
+    // Zoom toward laptop in current sayli-hero (held front-center)
+    plate.style.transformOrigin = "54% 58%";
     track(
       plate.animate(
         [
@@ -617,7 +618,7 @@ export function createEngine(
       ),
     );
 
-    // Laptop floats forward and turns to face camera (~same beat as the old clip)
+    // Laptop floats forward and turns to face camera (~same beat as the dive clip)
     laptopFly.style.opacity = "1";
     track(
       laptopFly.animate(
@@ -626,14 +627,14 @@ export function createEngine(
             offset: 0,
             opacity: 0.9,
             transform:
-              "translate(110px, 210px) scale(0.34) rotateY(52deg) rotateX(24deg) rotateZ(-8deg)",
+              "translate(40px, 180px) scale(0.34) rotateY(42deg) rotateX(20deg) rotateZ(-6deg)",
             filter: "blur(2px)",
           },
           {
             offset: 0.45,
             opacity: 1,
             transform:
-              "translate(36px, 70px) scale(0.72) rotateY(18deg) rotateX(10deg) rotateZ(-2deg)",
+              "translate(12px, 60px) scale(0.72) rotateY(14deg) rotateX(8deg) rotateZ(-2deg)",
             filter: "blur(0px)",
           },
           {

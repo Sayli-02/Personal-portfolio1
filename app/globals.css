@@ -267,7 +267,7 @@ a {
   background-color: #dfe4e1;
   /* Head crop from flattened hero (no separate cutout) */
   background-size: 280px auto;
-  background-position: 45% 8%;
+  background-position: 50% 6%;
   background-repeat: no-repeat;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06);
 }
@@ -351,8 +351,8 @@ a {
   height: 100%;
   display: block;
   object-fit: cover;
-  /* Bias toward the laptop in the flattened hero — tweak if needed */
-  object-position: 48% 62%;
+  /* Bias toward the laptop in the current sayli-hero */
+  object-position: 54% 58%;
 }
 
 .caseplate {
