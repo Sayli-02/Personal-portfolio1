@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Anton, Caveat_Brush, Inter_Tight } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
@@ -25,11 +25,18 @@ const anton = Anton({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sayali — AI/ML Engineer Portfolio",
-    template: "%s · Sayali",
+    default: "Sayli — AI/ML Engineer Portfolio",
+    template: "%s · Sayli",
   },
   description:
-    "Portfolio of Sayali — AI/ML engineer and developer. Projects, about, and contact.",
+    "Portfolio of Sayli — AI/ML engineer and developer. Projects, about, and contact.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0b2f20",
 };
 
 export default function RootLayout({

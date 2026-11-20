@@ -20,10 +20,24 @@ export default function Navbar() {
     return () => window.removeEventListener("hashchange", sync);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <header className={`site-nav${isHome ? " site-nav--home" : ""}`}>
+    <header className={`site-nav${isHome ? " site-nav--home" : ""}${open ? " is-open" : ""}`}>
       <div className="site-nav__inner">
-        <Link href="/#home" className="site-nav__brand" aria-label="Sayali home">
+        <Link href="/#home" className="site-nav__brand" aria-label="Sayli home">
           {brand.logo}
         </Link>
 
@@ -32,6 +46,7 @@ export default function Navbar() {
           className="site-nav__toggle"
           aria-expanded={open}
           aria-controls="site-nav-menu"
+          aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
           <span />
@@ -60,6 +75,7 @@ export default function Navbar() {
             className="site-nav__resume"
             href={resume.path}
             download={resume.filename}
+            onClick={() => setOpen(false)}
           >
             {resume.label}
           </a>

@@ -148,9 +148,11 @@ export function createEngine(
         x = (W - 1440 * s) / 2;
       }
     } else if (m === "hero") {
-      s = Math.min(W / 720, (0.52 * H) / 810);
+      // Keep full portrait readable on phones; bias slightly smaller on short screens
+      const tall = H / W >= 1.7;
+      s = Math.min(W / 720, ((tall ? 0.48 : 0.54) * H) / 810);
       x = W / 2 - 720 * s;
-      y = H - 760 * s;
+      y = Math.max(H * 0.12, H - 760 * s);
     } else {
       const navH = 0.022 * H + 42 + 22;
       const ticketHeight = ticket.offsetHeight;
@@ -206,6 +208,47 @@ export function createEngine(
       );
     }
     if (m === "hero") fitHero(p);
+  }
+
+  /** Instantly restore hero layers/pose after dive (no reverse animation). */
+  function snapHeroAfterDive() {
+    mode = "hero";
+    doc.body.classList.remove("is-case");
+    frame.classList.remove("glide");
+    place("hero");
+
+    plate.style.visibility = "";
+    plate.style.opacity = "";
+    plate.style.transform = "";
+    plate.style.filter = "";
+    plate.style.transformOrigin = "";
+
+    caseplate.getAnimations().forEach((a) => a.cancel());
+    caseplate.style.opacity = "0";
+    caseplate.style.filter = "";
+
+    laptopFly.getAnimations().forEach((a) => a.cancel());
+    laptopFly.style.opacity = "0";
+
+    trans.pause();
+    trans.style.opacity = "0";
+    screen.style.opacity = "0";
+    if (mlDash) mlDash.classList.remove("is-on");
+
+    // Clear fill:forwards fade-outs from heroOut
+    for (const el of [...allWms(), ...allScripts(), ...allBadges()]) {
+      el.getAnimations().forEach((a) => a.cancel());
+      el.style.opacity = "";
+      el.style.transform = "";
+      el.style.clipPath = "";
+      el.style.filter = "";
+    }
+    if (cut) {
+      cut.getAnimations().forEach((a) => a.cancel());
+      cut.style.opacity = "";
+    }
+
+    startSway();
   }
 
   function cancelSway() {
@@ -677,21 +720,28 @@ export function createEngine(
 
     await wait(1600);
     if (destroyed) return;
-    frame.classList.remove("glide");
     setBusy(false);
-    // Leave case overlay, unlock page scroll, jump to About automatically
-    doc.body.classList.remove("is-case");
-    mode = "hero";
+    // Unlock scroll, snap frame back to hero pose (was stuck at case scale),
+    // then jump to About. Without place("hero"), scrolling home looked zoomed-in.
     scrollUnlocked = true;
-    if (mlDash) mlDash.classList.remove("is-on");
-    screen.style.opacity = "0";
     ticket.getAnimations().forEach((a) => a.cancel());
     ticket.style.opacity = "0";
     descKids.forEach((el) => {
       el.getAnimations().forEach((a) => a.cancel());
       el.style.opacity = "0";
     });
+    snapHeroAfterDive();
     hooks.onDiveComplete?.();
+    // hero-lock removal can change scrollbar width — re-fit after layout settles
+    const id = requestAnimationFrame(() => {
+      rafs.delete(id);
+      const id2 = requestAnimationFrame(() => {
+        rafs.delete(id2);
+        if (!destroyed && mode === "hero") place("hero");
+      });
+      rafs.add(id2);
+    });
+    rafs.add(id);
   }
 
   async function playTransWithSpeedCurve(): Promise<void> {

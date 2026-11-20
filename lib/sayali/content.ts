@@ -8,7 +8,7 @@ export const resume = {
 
 export const profile = {
   name: "Sayli Kulkarni",
-  shortName: "SAYALI",
+  shortName: "SAYLI",
   phone: "7558236448",
   phoneHref: "tel:+917558236448",
   email: "KSAYLI235@GMAIL.COM",
@@ -57,7 +57,7 @@ export const experience = {
   headline: "Where I’ve been building.",
   items: [
     {
-      period: "2024 – Present",
+      period: "Sep 2026 – Nov 2026",
       title: "Full Stack Development and AI Automation Intern",
       org: "Parmar Properties",
       points: [

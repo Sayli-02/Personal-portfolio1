@@ -60,16 +60,16 @@ export const cases: CaseData[] = [
 ];
 
 export const brand = {
-  name: "SAYALI",
-  title: "Sayali — AI/ML Engineer Portfolio",
+  name: "SAYLI",
+  title: "Sayli — AI/ML Engineer Portfolio",
   script: "AI/ML ENGINEER • DEVELOPER",
-  logo: "SAYALI",
+  logo: "SAYLI",
   card: {
     heading: ["DEVELOPER", "CARD"] as const,
     year: "2026",
     role: "AI/ML ENGINEER // DEVELOPER",
     rows: [
-      ["NAME", "SAYALI"],
+      ["NAME", "SAYLI"],
       ["FOCUS", "AI / ML"],
       ["GITHUB", "Sayli-02"],
       ["EMAIL", "KSAYLI235@GMAIL.COM"],

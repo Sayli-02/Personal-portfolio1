@@ -4,7 +4,7 @@ export default function MlDashboard() {
     <div className="ml-dash" data-ml-dash>
       <header className="ml-dash__top">
         <span className="ml-dash__dot" />
-        <span>sayali · model lab</span>
+        <span>sayli · model lab</span>
         <span className="ml-dash__live">LIVE</span>
       </header>
 
