@@ -89,12 +89,29 @@ export default function Hero() {
     const root = rootRef.current;
     if (!root) return;
 
-    // Strict lock: no page scroll until the laptop dive/trans finishes
-    document.body.classList.add("hero-lock");
+    const sectionHashes = new Set([
+      "#about",
+      "#experience",
+      "#projects",
+      "#contact",
+    ]);
+    // Refresh / deep-link on a landing section: do not trap scroll behind the dive
+    const deepLink = sectionHashes.has(window.location.hash);
 
-    const goAbout = () => {
+    const unlockPage = () => {
       document.body.classList.remove("hero-lock");
       document.body.classList.add("hero-ready");
+    };
+
+    if (deepLink) {
+      unlockPage();
+    } else {
+      // Strict lock: no page scroll until the laptop dive/trans finishes
+      document.body.classList.add("hero-lock");
+    }
+
+    const goAbout = () => {
+      unlockPage();
       requestAnimationFrame(() => {
         document.getElementById("about")?.scrollIntoView({
           behavior: "smooth",
@@ -103,11 +120,21 @@ export default function Hero() {
       });
     };
 
-    const { destroy } = createEngine(root, {
+    const { destroy, unlockScroll } = createEngine(root, {
       onDiveComplete: goAbout,
+      startUnlocked: deepLink,
     });
 
+    // Browser scroll restoration (refresh mid-page with no hash)
+    const id = window.setTimeout(() => {
+      if (window.scrollY > window.innerHeight * 0.4) {
+        unlockPage();
+        unlockScroll();
+      }
+    }, 0);
+
     return () => {
+      window.clearTimeout(id);
       document.body.classList.remove("hero-lock");
       document.body.classList.remove("hero-ready");
       destroy();

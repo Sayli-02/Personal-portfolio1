@@ -13,12 +13,14 @@ type Pose = { x: number; y: number; s: number; mobile: boolean };
 export type EngineHooks = {
   onEntranceDone?: () => void;
   onDiveComplete?: () => void;
+  /** Skip dive lock (e.g. refresh on #about / mid-page). */
+  startUnlocked?: boolean;
 };
 
 export function createEngine(
   root: HTMLElement,
   hooks: EngineHooks = {},
-): { destroy: () => void } {
+): { destroy: () => void; unlockScroll: () => void } {
   const doc = document;
   const stage = root;
   const frame = qs<HTMLElement>(root, ".frame");
@@ -70,7 +72,7 @@ export function createEngine(
   let busy = false;
   let destroyed = false;
   let transReady = false;
-  let scrollUnlocked = false;
+  let scrollUnlocked = !!hooks.startUnlocked;
   let blobUrl: string | null = null;
   let wheelLockUntil = 0;
   let touchX = 0;
@@ -1111,6 +1113,10 @@ export function createEngine(
   place("hero");
   scheduleEntrance();
 
+  function unlockScroll() {
+    scrollUnlocked = true;
+  }
+
   function destroy() {
     destroyed = true;
     setBusy(false);
@@ -1152,7 +1158,7 @@ export function createEngine(
     // entranceDone stays true only after a completed entrance.
   }
 
-  return { destroy };
+  return { destroy, unlockScroll };
 }
 
 function qs<T extends Element = Element>(root: ParentNode, sel: string): T {
