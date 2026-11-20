@@ -13,7 +13,7 @@ type Pose = { x: number; y: number; s: number; mobile: boolean };
 export type EngineHooks = {
   onEntranceDone?: () => void;
   onDiveComplete?: () => void;
-  /** Skip dive lock (e.g. refresh on #about / mid-page). */
+  /** Deep-link to a section: free scroll; home loads still preload the trans. */
   startUnlocked?: boolean;
 };
 
@@ -52,7 +52,7 @@ export function createEngine(
   const mScript = root.querySelector<HTMLElement>(".m-script");
   const mBadgeHost = qs<HTMLElement>(root, ".m-badge");
   const t1 = qs<HTMLElement>(root, ".tag.t1");
-  const t2 = qs<HTMLElement>(root, ".tag.t2");
+  const t2 = root.querySelector<HTMLElement>(".tag.t2");
 
   // Mobile badge: clone frame badge so markup matches exactly (brief §13 / rule 8)
   mBadgeHost.replaceChildren();
@@ -73,7 +73,6 @@ export function createEngine(
   let destroyed = false;
   let transReady = false;
   let scrollUnlocked = !!hooks.startUnlocked;
-  let blobUrl: string | null = null;
   let wheelLockUntil = 0;
   let touchX = 0;
   let touchY = 0;
@@ -1058,7 +1057,7 @@ export function createEngine(
   window.addEventListener("resize", onResize);
 
   t1.addEventListener("click", onT1);
-  t2.addEventListener("click", onT2);
+  t2?.addEventListener("click", onT2);
   prevBtn.addEventListener("click", onPrev);
   nextBtn.addEventListener("click", onNext);
   screenHit.addEventListener("click", onScreenHit);
@@ -1076,38 +1075,33 @@ export function createEngine(
     { once: true },
   );
 
-  // Sayali dive clip — blob preload (same as original) with direct-src fallback
+  // Dive clip: use the file URL directly (blob + Strict Mode remount was
+  // revoking ObjectURLs and leaving transReady false after refresh).
   const markTransReady = () => {
-    transReady = true;
+    if (!destroyed) transReady = true;
   };
-  fetch(assets.trans)
-    .then((r) => {
-      if (!r.ok) throw new Error("sayli trans unavailable");
-      return r.blob();
-    })
-    .then((b) => {
-      if (destroyed) return;
-      blobUrl = URL.createObjectURL(b);
-      trans.src = blobUrl;
-      trans.load();
-      if (trans.readyState >= 2) markTransReady();
-      else trans.addEventListener("loadeddata", markTransReady, { once: true });
-    })
-    .catch(() => {
-      if (destroyed) return;
-      // Direct file path still plays the dive if blob fetch fails
-      trans.src = assets.trans;
-      trans.load();
-      if (trans.readyState >= 2) markTransReady();
-      else trans.addEventListener("loadeddata", markTransReady, { once: true });
-      trans.addEventListener(
-        "error",
-        () => {
-          transReady = false;
-        },
-        { once: true },
-      );
-    });
+  trans.preload = "auto";
+  trans.muted = true;
+  trans.playsInline = true;
+  if (!trans.getAttribute("src")) trans.src = assets.trans;
+  trans.addEventListener("loadeddata", markTransReady, { once: true });
+  trans.addEventListener("canplaythrough", markTransReady, { once: true });
+  trans.addEventListener(
+    "error",
+    () => {
+      if (!destroyed) transReady = false;
+    },
+    { once: true },
+  );
+  try {
+    trans.load();
+  } catch {
+    /* ignore */
+  }
+  if (trans.readyState >= 2) markTransReady();
+
+  // Warm the file in cache; do not swap to a blob URL (unsafe across remounts)
+  fetch(assets.trans, { cache: "force-cache" }).catch(() => {});
 
   // Init pose + entrance
   place("hero");
@@ -1131,7 +1125,7 @@ export function createEngine(
     window.removeEventListener("resize", onResize);
 
     t1.removeEventListener("click", onT1);
-    t2.removeEventListener("click", onT2);
+    t2?.removeEventListener("click", onT2);
     prevBtn.removeEventListener("click", onPrev);
     nextBtn.removeEventListener("click", onNext);
     screenHit.removeEventListener("click", onScreenHit);
@@ -1148,11 +1142,6 @@ export function createEngine(
     anims.clear();
 
     trans.pause();
-
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
-      blobUrl = null;
-    }
 
     // If entrance never finished, allow the remount to run it (Strict Mode).
     // entranceDone stays true only after a completed entrance.

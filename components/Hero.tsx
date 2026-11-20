@@ -89,13 +89,14 @@ export default function Hero() {
     const root = rootRef.current;
     if (!root) return;
 
+    // Home / refresh on home → strict lock + full trans.
+    // Refresh on a section hash → free scroll (no lock). After dive this session → free scroll.
     const sectionHashes = new Set([
       "#about",
       "#experience",
       "#projects",
       "#contact",
     ]);
-    // Refresh / deep-link on a landing section: do not trap scroll behind the dive
     const deepLink = sectionHashes.has(window.location.hash);
 
     const unlockPage = () => {
@@ -106,7 +107,6 @@ export default function Hero() {
     if (deepLink) {
       unlockPage();
     } else {
-      // Strict lock: no page scroll until the laptop dive/trans finishes
       document.body.classList.add("hero-lock");
     }
 
@@ -120,21 +120,12 @@ export default function Hero() {
       });
     };
 
-    const { destroy, unlockScroll } = createEngine(root, {
+    const { destroy } = createEngine(root, {
       onDiveComplete: goAbout,
       startUnlocked: deepLink,
     });
 
-    // Browser scroll restoration (refresh mid-page with no hash)
-    const id = window.setTimeout(() => {
-      if (window.scrollY > window.innerHeight * 0.4) {
-        unlockPage();
-        unlockScroll();
-      }
-    }, 0);
-
     return () => {
-      window.clearTimeout(id);
       document.body.classList.remove("hero-lock");
       document.body.classList.remove("hero-ready");
       destroy();
@@ -200,9 +191,6 @@ export default function Hero() {
         {/* Site navbar owns Home/Projects/Contact — only dive controls stay here */}
         <button type="button" className="tag t1 pre">
           my studio
-        </button>
-        <button type="button" className="tag t2 pre">
-          about me
         </button>
 
         <div className="hint pre">
