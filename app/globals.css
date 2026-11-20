@@ -1148,6 +1148,61 @@ body.is-case .nav-case.prev.dim {
   }
 }
 
+/* Scroll reveals (About → Contact only; Home hero untouched) */
+.reveal {
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform, filter;
+}
+
+.reveal--up {
+  transform: translateY(36px);
+}
+
+.reveal--left {
+  transform: translateX(-28px);
+}
+
+.reveal--right {
+  transform: translateX(28px);
+}
+
+.reveal--fade {
+  transform: none;
+  filter: blur(4px);
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal--up,
+  .reveal--left,
+  .reveal--right,
+  .reveal--fade {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
+
+.site-footer__inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
 /* Landing sections under the hero */
 .site-section {
   position: relative;
