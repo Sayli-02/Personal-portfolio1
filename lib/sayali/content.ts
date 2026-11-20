@@ -61,7 +61,7 @@ export const experience = {
       title: "Full Stack Development and AI Automation Intern",
       org: "Parmar Properties",
       points: [
-        "Developing the company’s CRM as part of full-stack development and AI automation work.",
+        "Developing the company’s official website as part of full-stack development.",
         "Developing the company’s property listing website.",
       ],
     },
