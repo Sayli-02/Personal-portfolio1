@@ -136,8 +136,6 @@ export default function Hero() {
 
         <Badge />
 
-        <div className="script pre">{brand.script}</div>
-
         <video
           className="trans"
           muted
@@ -235,7 +233,6 @@ export default function Hero() {
           bottomOpacity=".3"
           gradientId="mWmGrad"
         />
-        <div className="m-only m-script pre">{brand.script}</div>
         <div className="m-only m-badge" />
       </div>
     </div>

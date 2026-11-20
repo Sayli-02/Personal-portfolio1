@@ -26,7 +26,7 @@ export function createEngine(
   // Flattened hero: cutout is optional / absent
   const cut = root.querySelector<HTMLImageElement>(".cut");
   const wm = qs<HTMLElement>(root, ".frame .wm");
-  const script = qs<HTMLElement>(root, ".frame .script");
+  const script = root.querySelector<HTMLElement>(".frame .script");
   const badge = qs<HTMLElement>(root, ".frame .badge");
   const trans = qs<HTMLVideoElement>(root, "video.trans");
   const laptopFly = qs<HTMLElement>(root, ".laptop-fly");
@@ -47,7 +47,7 @@ export function createEngine(
   const prevBtn = qs<HTMLElement>(root, ".nav-case.prev");
   const nextBtn = qs<HTMLElement>(root, ".nav-case.next");
   const mWm = qs<HTMLElement>(root, ".m-wm");
-  const mScript = qs<HTMLElement>(root, ".m-script");
+  const mScript = root.querySelector<HTMLElement>(".m-script");
   const mBadgeHost = qs<HTMLElement>(root, ".m-badge");
   const t1 = qs<HTMLElement>(root, ".tag.t1");
   const t2 = qs<HTMLElement>(root, ".tag.t2");
@@ -60,7 +60,8 @@ export function createEngine(
   const allBadges = () =>
     [...root.querySelectorAll<HTMLElement>(".badge")];
   const allWms = () => [wm, mWm];
-  const allScripts = () => [script, mScript];
+  const allScripts = () =>
+    [script, mScript].filter((el): el is HTMLElement => !!el);
 
   const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const D = (ms: number) => (RM ? 0 : ms);
@@ -183,7 +184,7 @@ export function createEngine(
     badge.style.left = `${Math.min(986, vr - pad - 417)}px`;
     const vb = Math.min(810, (H - y) / s);
     badge.style.top = `${Math.min(-165, vb - 56 / s - 935)}px`;
-    script.style.left = `${vl + pad + 70}px`;
+    if (script) script.style.left = `${vl + pad + 70}px`;
   }
 
   function place(m: Mode) {
