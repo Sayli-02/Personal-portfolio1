@@ -53,13 +53,31 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('js')`,
+            __html: `(function(){
+  document.documentElement.classList.add("js");
+  try { history.scrollRestoration = "manual"; } catch (e) {}
+  var h = location.hash;
+  var section = h === "#about" || h === "#experience" || h === "#projects" || h === "#contact";
+  document.documentElement.classList.add(section ? "land-section" : "land-home");
+})();`,
           }}
         />
       </head>
       <body>
         <Navbar />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+  var root = document.documentElement;
+  if (!root.classList.contains("land-section")) return;
+  var id = (location.hash || "").replace("#", "");
+  var el = id && document.getElementById(id);
+  if (el) el.scrollIntoView({ block: "start" });
+  root.classList.add("land-placed");
+})();`,
+          }}
+        />
       </body>
     </html>
   );

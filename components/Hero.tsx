@@ -82,6 +82,29 @@ function Badge() {
   );
 }
 
+const SECTION_HASHES = new Set([
+  "#about",
+  "#experience",
+  "#projects",
+  "#contact",
+]);
+
+function sectionId(hash: string): string | null {
+  if (!SECTION_HASHES.has(hash)) return null;
+  return hash.slice(1);
+}
+
+function placeSection(id: string, behavior: ScrollBehavior) {
+  document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
+  document.documentElement.classList.add("land-placed");
+}
+
+function clearHomeLock() {
+  document.documentElement.classList.remove("land-home");
+  document.body.classList.remove("hero-lock");
+  document.body.classList.add("hero-ready");
+}
+
 export default function Hero() {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -89,45 +112,62 @@ export default function Hero() {
     const root = rootRef.current;
     if (!root) return;
 
-    // Home / refresh on home → strict lock + full trans.
-    // Refresh on a section hash → free scroll (no lock). After dive this session → free scroll.
-    const sectionHashes = new Set([
-      "#about",
-      "#experience",
-      "#projects",
-      "#contact",
-    ]);
-    const deepLink = sectionHashes.has(window.location.hash);
-
-    const unlockPage = () => {
-      document.body.classList.remove("hero-lock");
-      document.body.classList.add("hero-ready");
-    };
+    // Home / #home refresh → lock + buffer the full dive clip.
+    // A section hash (including the automatic jump to About) stays put:
+    // no lock, no trans, hero is not brought back on screen.
+    const deepLink = sectionId(window.location.hash);
 
     if (deepLink) {
-      unlockPage();
+      clearHomeLock();
+      document.documentElement.classList.add("land-section");
+      placeSection(deepLink, "auto");
     } else {
+      document.documentElement.classList.remove("land-section");
+      document.documentElement.classList.add("land-home");
       document.body.classList.add("hero-lock");
+      window.scrollTo(0, 0);
     }
 
+    let handoff = false;
+
     const goAbout = () => {
-      unlockPage();
+      handoff = true;
+      clearHomeLock();
+      const next = "/#about";
+      if (window.location.hash !== "#about") {
+        history.replaceState(null, "", next);
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
       requestAnimationFrame(() => {
-        document.getElementById("about")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        placeSection("about", "auto");
+        handoff = false;
       });
     };
 
-    const { destroy } = createEngine(root, {
+    const { destroy, unlockScroll } = createEngine(root, {
       onDiveComplete: goAbout,
-      startUnlocked: deepLink,
+      startUnlocked: !!deepLink,
+      skipTrans: !!deepLink,
     });
 
+    const onHash = () => {
+      const id = sectionId(window.location.hash);
+      if (!id) return;
+      clearHomeLock();
+      unlockScroll();
+      // Handoff scrolls itself. Adding land-section before land-placed would
+      // blank the page for a frame while the hero is still in view.
+      if (handoff) return;
+      document.documentElement.classList.add("land-section");
+      placeSection(id, "auto");
+    };
+    window.addEventListener("hashchange", onHash);
+
     return () => {
+      document.documentElement.classList.remove("land-home");
       document.body.classList.remove("hero-lock");
       document.body.classList.remove("hero-ready");
+      window.removeEventListener("hashchange", onHash);
       destroy();
     };
   }, []);
@@ -154,13 +194,7 @@ export default function Hero() {
 
         <Badge />
 
-        <video
-          className="trans"
-          muted
-          playsInline
-          preload="auto"
-          src={assets.trans}
-        />
+        <video className="trans" muted playsInline preload="none" />
 
         <div className="laptop-fly" aria-hidden="true">
           <img src={assets.plate} alt="" draggable={false} />

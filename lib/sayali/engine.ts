@@ -13,8 +13,10 @@ type Pose = { x: number; y: number; s: number; mobile: boolean };
 export type EngineHooks = {
   onEntranceDone?: () => void;
   onDiveComplete?: () => void;
-  /** Deep-link to a section: free scroll; home loads still preload the trans. */
+  /** Deep-link to a section: free scroll, no dive clip. */
   startUnlocked?: boolean;
+  /** About / other sections: do not buffer or play the dive clip. */
+  skipTrans?: boolean;
 };
 
 export function createEngine(
@@ -724,8 +726,6 @@ export function createEngine(
     await wait(1600);
     if (destroyed) return;
     setBusy(false);
-    // Unlock scroll, snap frame back to hero pose (was stuck at case scale),
-    // then jump to About. Without place("hero"), scrolling home looked zoomed-in.
     scrollUnlocked = true;
     ticket.getAnimations().forEach((a) => a.cancel());
     ticket.style.opacity = "0";
@@ -733,17 +733,30 @@ export function createEngine(
       el.getAnimations().forEach((a) => a.cancel());
       el.style.opacity = "0";
     });
-    snapHeroAfterDive();
+    // Leave the dive frame on screen until About covers it, then restore the
+    // stable hero offscreen. Snapping first reloads the hero in view.
     hooks.onDiveComplete?.();
-    // hero-lock removal can change scrollbar width — re-fit after layout settles
-    const id = requestAnimationFrame(() => {
-      rafs.delete(id);
-      const id2 = requestAnimationFrame(() => {
-        rafs.delete(id2);
-        if (!destroyed && mode === "hero") place("hero");
-      });
-      rafs.add(id2);
-    });
+    snapHeroWhenOffscreen();
+  }
+
+  function snapHeroWhenOffscreen() {
+    const started = performance.now();
+    const tick = () => {
+      if (destroyed) return;
+      const hero = document.getElementById("home");
+      const bottom = hero?.getBoundingClientRect().bottom ?? 0;
+      // About sits just under the navbar, so the hero is "gone" once its
+      // bottom edge is only the nav strip — not flush with the viewport top.
+      const away = bottom < Math.max(96, innerHeight * 0.2);
+      if (!away && performance.now() - started < 2800) {
+        const id = requestAnimationFrame(tick);
+        rafs.add(id);
+        return;
+      }
+      snapHeroAfterDive();
+      if (!destroyed && mode === "hero") place("hero");
+    };
+    const id = requestAnimationFrame(tick);
     rafs.add(id);
   }
 
@@ -826,6 +839,11 @@ export function createEngine(
     if (destroyed) return;
 
     // Never play the old Haldoren male clip. Only a local Sayali trans counts.
+    // On home refresh, wait until the file is actually buffered before giving up.
+    if (!RM && !hooks.skipTrans && !transReady) {
+      await ensureTrans();
+      if (destroyed) return;
+    }
     if (RM || !transReady) {
       await cinematicStillDive();
       return;
@@ -986,8 +1004,9 @@ export function createEngine(
   }
 
   function onWheel(e: WheelEvent) {
-    // Strict lock until dive finishes; after that the landing page scrolls freely.
-    if (!scrollUnlocked || mode === "case") {
+    // Strict lock until the dive hands off to About. After that, scroll freely
+    // even if the hero pose has not snapped yet.
+    if (!scrollUnlocked) {
       e.preventDefault();
     }
     const now = performance.now();
@@ -1077,31 +1096,61 @@ export function createEngine(
 
   // Dive clip: use the file URL directly (blob + Strict Mode remount was
   // revoking ObjectURLs and leaving transReady false after refresh).
-  const markTransReady = () => {
+  // Section lands skip this so About does not buffer the hero dive.
+  function markTransReady() {
     if (!destroyed) transReady = true;
-  };
-  trans.preload = "auto";
-  trans.muted = true;
-  trans.playsInline = true;
-  if (!trans.getAttribute("src")) trans.src = assets.trans;
-  trans.addEventListener("loadeddata", markTransReady, { once: true });
-  trans.addEventListener("canplaythrough", markTransReady, { once: true });
-  trans.addEventListener(
-    "error",
-    () => {
-      if (!destroyed) transReady = false;
-    },
-    { once: true },
-  );
-  try {
-    trans.load();
-  } catch {
-    /* ignore */
   }
-  if (trans.readyState >= 2) markTransReady();
 
-  // Warm the file in cache; do not swap to a blob URL (unsafe across remounts)
-  fetch(assets.trans, { cache: "force-cache" }).catch(() => {});
+  function ensureTrans(): Promise<void> {
+    if (hooks.skipTrans) return Promise.resolve();
+    if (transReady || trans.readyState >= 2) {
+      transReady = true;
+      return Promise.resolve();
+    }
+    trans.preload = "auto";
+    trans.muted = true;
+    trans.playsInline = true;
+    if (!trans.getAttribute("src")) trans.src = assets.trans;
+    try {
+      trans.load();
+    } catch {
+      /* ignore */
+    }
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        trans.removeEventListener("loadeddata", onReady);
+        trans.removeEventListener("canplay", onReady);
+        trans.removeEventListener("canplaythrough", onReady);
+        trans.removeEventListener("error", onFail);
+        clearTimeout(timer);
+        timers.delete(timer);
+        resolve();
+      };
+      const onReady = () => {
+        markTransReady();
+        finish();
+      };
+      const onFail = () => {
+        if (!destroyed) transReady = false;
+        finish();
+      };
+      trans.addEventListener("loadeddata", onReady);
+      trans.addEventListener("canplay", onReady);
+      trans.addEventListener("canplaythrough", onReady);
+      trans.addEventListener("error", onFail);
+      const timer = window.setTimeout(finish, 8000);
+      timers.add(timer);
+      if (trans.readyState >= 2) onReady();
+    });
+  }
+
+  if (!hooks.skipTrans) {
+    void ensureTrans();
+    fetch(assets.trans, { cache: "force-cache" }).catch(() => {});
+  }
 
   // Init pose + entrance
   place("hero");

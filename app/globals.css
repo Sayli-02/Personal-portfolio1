@@ -55,6 +55,18 @@ body {
   overflow-y: auto;
 }
 
+/* Home refresh: lock before hydration so the page cannot sit on About. */
+html.land-home,
+html.land-home body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Section refresh: hide the hero frame until the hash target is in view. */
+html.land-section:not(.land-placed) body {
+  opacity: 0;
+}
+
 body.hero-lock {
   height: 100%;
   overflow: hidden;
@@ -1208,7 +1220,6 @@ body.is-case .nav-case.prev.dim {
   position: relative;
   z-index: 1;
   padding: 100px 22px 80px;
-  scroll-margin-top: 72px;
   overflow: visible;
   background:
     radial-gradient(900px 480px at 12% -10%, rgba(159, 216, 191, 0.18), transparent 60%),
@@ -2057,7 +2068,6 @@ body.is-case .nav-case {
 @media (max-width: 480px) {
   .site-section {
     padding: 72px 16px 56px;
-    scroll-margin-top: 64px;
   }
 
   .site-page {
